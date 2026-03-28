@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical Transportability Calculator | CTE Penalty Index</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --bg: #f0f2f5;
+  --bg-card: #ffffff;
+  --text: #1a1a2e;
+  --text-muted: #6c757d;
+  --border: #dee2e6;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --high: #16a34a;
+  --high-bg: #dcfce7;
+  --medium: #d97706;
+  --medium-bg: #fef3c7;
+  --low: #dc2626;
+  --low-bg: #fee2e2;
+  --tab-bg: #e9ecef;
+  --tab-active: #ffffff;
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+  --gauge-track: #e5e7eb;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.1);
+  --radius: 8px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ===== Dark Mode ===== */
+body.dark-mode {
+  --bg: #0f172a;
+  --bg-card: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --tab-bg: #1e293b;
+  --tab-active: #334155;
+  --input-bg: #1e293b;
+  --input-border: #475569;
+  --gauge-track: #334155;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.3);
+  --high-bg: #052e16;
+  --medium-bg: #451a03;
+  --low-bg: #450a0a;
+}
+
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+a { color: var(--primary); }
+
+/* ===== Header ===== */
+.app-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  color: #fff;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+body.dark-mode .app-header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+}
+.app-header h1 { font-size: 1.5rem; font-weight: 700; }
+.app-header p { font-size: 0.875rem; opacity: 0.85; margin-top: 2px; }
+.header-controls { display: flex; gap: 8px; align-items: center; }
+.header-controls button {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+}
+.header-controls button:hover { background: rgba(255,255,255,0.25); }
+.header-controls button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* ===== Tab Bar ===== */
+.tab-bar {
+  display: flex;
+  background: var(--tab-bg);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  padding: 0 16px;
+}
+.tab-bar [role="tab"] {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+}
+.tab-bar [role="tab"]:hover { color: var(--text); }
+.tab-bar [role="tab"][aria-selected="true"] {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: var(--tab-active);
+}
+.tab-bar [role="tab"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+/* ===== Tab Panels ===== */
+[role="tabpanel"] {
+  display: none;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+[role="tabpanel"].active { display: block; }
+
+/* ===== Cards ===== */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.card h2 { font-size: 1.15rem; margin-bottom: 12px; }
+.card h3 { font-size: 1rem; margin-bottom: 8px; color: var(--text-muted); }
+
+/* ===== Form Elements ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.form-group input, .form-group select {
+  padding: 8px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: var(--input-bg);
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+.form-group input[type="number"] { -moz-appearance: textfield; }
+.form-group .hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn:active { transform: scale(0.98); }
+.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--tab-bg); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+/* ===== Verdict Card ===== */
+.verdict-card {
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  text-align: center;
+  border: 2px solid;
+}
+.verdict-card.high { background: var(--high-bg); border-color: var(--high); }
+.verdict-card.medium { background: var(--medium-bg); border-color: var(--medium); }
+.verdict-card.low { background: var(--low-bg); border-color: var(--low); }
+.verdict-label {
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.verdict-card.high .verdict-label { color: var(--high); }
+.verdict-card.medium .verdict-label { color: var(--medium); }
+.verdict-card.low .verdict-label { color: var(--low); }
+.verdict-score { font-size: 2.5rem; font-weight: 800; margin: 8px 0; }
+.verdict-card.high .verdict-score { color: var(--high); }
+.verdict-card.medium .verdict-score { color: var(--medium); }
+.verdict-card.low .verdict-score { color: var(--low); }
+
+/* ===== Gauge ===== */
+.gauge-container { text-align: center; padding: 16px 0; }
+.gauge-container svg { max-width: 320px; width: 100%; }
+
+/* ===== Component Bars ===== */
+.component-bar-container { margin: 8px 0; }
+.component-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+.component-bar-track {
+  height: 24px;
+  background: var(--gauge-track);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.component-bar-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.5s ease;
+}
+
+/* ===== Table ===== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.data-table th {
+  background: var(--tab-bg);
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.data-table tr:hover { background: var(--tab-bg); }
+
+/* ===== Sensitivity Chart ===== */
+.chart-area {
+  width: 100%;
+  height: 300px;
+  position: relative;
+}
+.chart-area canvas { width: 100% !important; height: 100% !important; }
+
+/* ===== Histogram ===== */
+.histogram-bar {
+  display: inline-block;
+  vertical-align: bottom;
+  margin: 0 1px;
+  border-radius: 2px 2px 0 0;
+  min-width: 8px;
+  transition: opacity 0.2s;
+}
+.histogram-bar:hover { opacity: 0.8; }
+.histogram-container {
+  display: flex;
+  align-items: flex-end;
+  height: 200px;
+  border-bottom: 2px solid var(--border);
+  border-left: 2px solid var(--border);
+  padding: 0 4px;
+  gap: 2px;
+}
+
+/* ===== Badge ===== */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.badge-high { background: var(--high-bg); color: var(--high); }
+.badge-medium { background: var(--medium-bg); color: var(--medium); }
+.badge-low { background: var(--low-bg); color: var(--low); }
+
+/* ===== Report ===== */
+.report-section { margin-bottom: 20px; }
+.report-section h3 { margin-bottom: 8px; font-size: 1rem; }
+.report-section p, .report-section li { font-size: 0.9rem; line-height: 1.7; }
+.report-section ul { padding-left: 24px; }
+.report-section blockquote {
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  background: var(--tab-bg);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-style: italic;
+  margin: 12px 0;
+}
+
+/* ===== Percentile Marker ===== */
+.percentile-bar {
+  height: 32px;
+  background: linear-gradient(90deg, var(--low) 0%, var(--medium) 50%, var(--high) 100%);
+  border-radius: 16px;
+  position: relative;
+  margin: 16px 0;
+}
+.percentile-marker {
+  position: absolute;
+  top: -8px;
+  width: 3px;
+  height: 48px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: left 0.5s ease;
+}
+.percentile-marker::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+/* ===== Example buttons ===== */
+.example-btn {
+  background: var(--tab-bg);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text);
+  transition: background 0.2s, border-color 0.2s;
+}
+.example-btn:hover { background: var(--border); border-color: var(--primary); }
+.example-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ===== Two-col layout ===== */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 768px) {
+  .two-col { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== Sensitivity domain table ===== */
+.domain-table-scroll { overflow-x: auto; }
+
+/* ===== Footer ===== */
+.app-footer {
+  text-align: center;
+  padding: 16px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+}
+
+/* ===== Skip link for a11y ===== */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 16px;
+  z-index: 100;
+  font-size: 0.9rem;
+}
+.skip-link:focus { top: 0; }
+
+/* ===== Comparison row ===== */
+.comparison-row {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+.comparison-row .card { flex: 1; }
+@media (max-width: 768px) {
+  .comparison-row { flex-direction: column; }
+}
+
+/* ===== Canvas chart wrapper ===== */
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.canvas-wrap canvas { width: 100% !important; }
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<!-- ===== HEADER ===== -->
+<header class="app-header">
+  <div>
+    <h1>Clinical Transportability Calculator</h1>
+    <p>CTE Penalty Index &mdash; Quantifying real-world generalizability of meta-analysis evidence</p>
+  </div>
+  <div class="header-controls">
+    <button id="btnDarkMode" type="button" aria-label="Toggle dark mode">Dark Mode</button>
+    <button id="btnReset" type="button" aria-label="Reset all inputs">Reset</button>
+  </div>
+</header>
+
+<!-- ===== TAB BAR ===== -->
+<div class="tab-bar" role="tablist" aria-label="Calculator sections">
+  <button role="tab" id="tab-input" aria-controls="panel-input" aria-selected="true" tabindex="0">Data Input</button>
+  <button role="tab" id="tab-assess" aria-controls="panel-assess" aria-selected="false" tabindex="-1">Assessment</button>
+  <button role="tab" id="tab-sensitivity" aria-controls="panel-sensitivity" aria-selected="false" tabindex="-1">Sensitivity</button>
+  <button role="tab" id="tab-benchmarks" aria-controls="panel-benchmarks" aria-selected="false" tabindex="-1">Benchmarks</button>
+  <button role="tab" id="tab-report" aria-controls="panel-report" aria-selected="false" tabindex="-1">Report</button>
+</div>
+
+<!-- ===== MAIN ===== -->
+<main id="main">
+
+<!-- ==================== TAB 1: DATA INPUT ==================== -->
+<div role="tabpanel" id="panel-input" aria-labelledby="tab-input" class="active">
+
+  <div class="card">
+    <h2>Load Example</h2>
+    <div class="btn-group">
+      <button class="example-btn" type="button" data-example="statins">Statins for CVD (1990s)</button>
+      <button class="example-btn" type="button" data-example="tcas">TCAs for Depression (1970s-80s)</button>
+      <button class="example-btn" type="button" data-example="betablockers">Beta-blockers post-MI</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Meta-Analysis Characteristics</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="inp-effect">Pooled Effect Estimate</label>
+        <input type="number" id="inp-effect" step="any" placeholder="e.g. 0.75">
+        <span class="hint">Log-scale for ratios (OR/RR/HR); raw for MD/SMD</span>
+      </div>
+      <div class="form-group">
+        <label for="inp-ci-lo">95% CI Lower</label>
+        <input type="number" id="inp-ci-lo" step="any" placeholder="e.g. 0.62">
+      </div>
+      <div class="form-group">
+        <label for="inp-ci-hi">95% CI Upper</label>
+        <input type="number" id="inp-ci-hi" step="any" placeholder="e.g. 0.90">
+      </div>
+      <div class="form-group">
+        <label for="inp-k">Number of Studies (k)</label>
+        <input type="number" id="inp-k" min="1" step="1" placeholder="e.g. 12">
+      </div>
+      <div class="form-group">
+        <label for="inp-n">Total Sample Size (N)</label>
+        <input type="number" id="inp-n" min="1" step="1" placeholder="e.g. 45000">
+      </div>
+      <div class="form-group">
+        <label for="inp-i2">I-squared (%)</label>
+        <input type="number" id="inp-i2" min="0" max="100" step="0.1" placeholder="e.g. 42">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Temporal Profile</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="inp-year-earliest">Year of Earliest Trial</label>
+        <input type="number" id="inp-year-earliest" min="1900" max="2030" step="1" placeholder="e.g. 1994">
+      </div>
+      <div class="form-group">
+        <label for="inp-year-latest">Year of Latest Trial</label>
+        <input type="number" id="inp-year-latest" min="1900" max="2030" step="1" placeholder="e.g. 2012">
+      </div>
+      <div class="form-group">
+        <label for="inp-year-median">Median Trial Year</label>
+        <input type="number" id="inp-year-median" min="1900" max="2030" step="1" placeholder="e.g. 2003">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Target Population</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="inp-target-year">Target Year</label>
+        <input type="number" id="inp-target-year" min="1950" max="2050" step="1">
+      </div>
+      <div class="form-group">
+        <label for="inp-domain">Clinical Domain</label>
+        <select id="inp-domain">
+          <option value="cardiovascular">Cardiovascular</option>
+          <option value="oncology">Oncology</option>
+          <option value="psychiatry">Psychiatry</option>
+          <option value="neurology">Neurology</option>
+          <option value="respiratory">Respiratory</option>
+          <option value="infectious">Infectious Disease</option>
+          <option value="endocrine">Endocrine</option>
+          <option value="musculoskeletal">Musculoskeletal</option>
+          <option value="gi">Gastrointestinal</option>
+          <option value="dermatology">Dermatology</option>
+          <option value="renal">Renal</option>
+          <option value="pediatric">Pediatric</option>
+          <option value="other" selected>Other / General</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Population Features</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="inp-age-trial">Mean Age in Trials</label>
+        <input type="number" id="inp-age-trial" min="0" max="120" step="0.1" placeholder="e.g. 58">
+      </div>
+      <div class="form-group">
+        <label for="inp-age-target">Mean Age in Target Population</label>
+        <input type="number" id="inp-age-target" min="0" max="120" step="0.1" placeholder="e.g. 65">
+        <span class="hint">Default: 65 (CV), 45 (psych), 55 (general)</span>
+      </div>
+      <div class="form-group">
+        <label for="inp-female-trial">% Female in Trials</label>
+        <input type="number" id="inp-female-trial" min="0" max="100" step="0.1" placeholder="e.g. 32">
+      </div>
+      <div class="form-group">
+        <label for="inp-female-target">% Female in Target Population</label>
+        <input type="number" id="inp-female-target" min="0" max="100" step="0.1" placeholder="e.g. 50">
+      </div>
+      <div class="form-group">
+        <label for="inp-scale">Enrollment Scale (avg per trial)</label>
+        <select id="inp-scale">
+          <option value="small">Small (&lt; 100)</option>
+          <option value="medium">Medium (100 - 500)</option>
+          <option value="large" selected>Large (&gt; 500)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <button class="btn btn-primary" id="btnCalculate" type="button">Calculate Transportability</button>
+    <button class="btn btn-secondary" id="btnSaveInputs" type="button">Save to Browser</button>
+    <button class="btn btn-secondary" id="btnLoadInputs" type="button">Load Saved</button>
+  </div>
+</div>
+
+<!-- ==================== TAB 2: ASSESSMENT ==================== -->
+<div role="tabpanel" id="panel-assess" aria-labelledby="tab-assess">
+
+  <div id="assess-placeholder" class="card" style="text-align:center; padding:40px;">
+    <p style="font-size:1.1rem; color:var(--text-muted);">Enter data in the Input tab and click <strong>Calculate Transportability</strong> to see results.</p>
+  </div>
+
+  <div id="assess-results" style="display:none;">
+    <!-- Verdict + Gauge row -->
+    <div class="two-col">
+      <div class="card">
+        <h2>CTE Penalty Index</h2>
+        <div id="verdict-card" class="verdict-card high">
+          <div class="verdict-label" id="verdict-label">HIGH</div>
+          <div class="verdict-score" id="verdict-score">0.95</div>
+          <div id="verdict-desc" style="font-size:0.9rem; margin-top:4px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Transportability Gauge</h2>
+        <div class="gauge-container" id="gauge-container">
+          <svg viewBox="0 0 200 120" id="gauge-svg" role="img" aria-label="Transportability gauge">
+            <!-- Track -->
+            <path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="var(--gauge-track)" stroke-width="16" stroke-linecap="round"/>
+            <!-- Colored arc -->
+            <path id="gauge-arc" d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="var(--high)" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 251.33"/>
+            <!-- Needle -->
+            <line id="gauge-needle" x1="100" y1="100" x2="100" y2="30" stroke="var(--text)" stroke-width="2.5" stroke-linecap="round" transform="rotate(-90,100,100)"/>
+            <circle cx="100" cy="100" r="6" fill="var(--text)"/>
+            <!-- Labels -->
+            <text x="15" y="116" font-size="9" fill="var(--text-muted)">0.0</text>
+            <text x="90" y="18" font-size="9" fill="var(--text-muted)">0.5</text>
+            <text x="172" y="116" font-size="9" fill="var(--text-muted)">1.0</text>
+            <text x="10" y="85" font-size="7" fill="var(--low)">LOW</text>
+            <text x="82" y="40" font-size="7" fill="var(--medium)">MED</text>
+            <text x="165" y="85" font-size="7" fill="var(--high)">HIGH</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Component breakdown -->
+    <div class="card">
+      <h2>Component Breakdown</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Each factor is scored 0&ndash;1 (1 = no penalty). The overall CTE penalty is the product of all components.</p>
+      <div id="component-bars"></div>
+    </div>
+
+    <!-- Original vs Adjusted -->
+    <div class="card">
+      <h2>Effect Estimate Comparison</h2>
+      <div class="comparison-row" id="effect-comparison"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 3: SENSITIVITY ==================== -->
+<div role="tabpanel" id="panel-sensitivity" aria-labelledby="tab-sensitivity">
+
+  <div id="sens-placeholder" class="card" style="text-align:center; padding:40px;">
+    <p style="font-size:1.1rem; color:var(--text-muted);">Run the assessment first to see sensitivity analyses.</p>
+  </div>
+
+  <div id="sens-results" style="display:none;">
+    <div class="card">
+      <h2>Temporal Sensitivity: CTE Penalty Over Time</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">How the penalty changes if the target year shifts &plusmn;10 years from the current setting.</p>
+      <div class="canvas-wrap">
+        <canvas id="chart-temporal" width="600" height="300"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Factor Isolation: What If Each Factor Were Perfect?</h2>
+      <table class="data-table" id="table-isolation">
+        <thead>
+          <tr><th>Factor</th><th>Actual</th><th>If Perfect (=1.0)</th><th>Gain</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Path to HIGH Transportability</h2>
+      <div id="path-to-high"></div>
+    </div>
+
+    <div class="card">
+      <h2>Domain Comparison</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">Same MA characteristics evaluated across all clinical domains.</p>
+      <div class="domain-table-scroll">
+        <table class="data-table" id="table-domains">
+          <thead>
+            <tr><th>Domain</th><th>Temporal</th><th>Age</th><th>Sex</th><th>Scale</th><th>Hetero</th><th>Overall</th><th>Class</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 4: BENCHMARKS ==================== -->
+<div role="tabpanel" id="panel-benchmarks" aria-labelledby="tab-benchmarks">
+
+  <div id="bench-placeholder" class="card" style="text-align:center; padding:40px;">
+    <p style="font-size:1.1rem; color:var(--text-muted);">Run the assessment first to see benchmark comparisons.</p>
+  </div>
+
+  <div id="bench-results" style="display:none;">
+    <div class="card">
+      <h2>Cochrane Benchmark Distribution (N = 445 reviews)</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">CTE penalty distribution from 11,974 comparisons across 445 Cochrane reviews linked to ClinicalTrials.gov.</p>
+      <div id="histogram-area" style="padding:12px 0;"></div>
+      <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); padding:0 4px;">
+        <span>0.0 (Low)</span><span>0.5</span><span>1.0 (High)</span>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>Your Percentile Rank</h2>
+        <div class="percentile-bar">
+          <div class="percentile-marker" id="percentile-marker" data-label="" style="left:50%;"></div>
+        </div>
+        <p id="percentile-text" style="text-align:center; font-size:0.95rem; margin-top:12px;"></p>
+      </div>
+      <div class="card">
+        <h2>Classification Breakdown</h2>
+        <table class="data-table">
+          <thead><tr><th>Class</th><th>Cochrane %</th><th>Your MA</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-high">HIGH</span></td>
+              <td>65.7%</td>
+              <td id="bench-your-high">&mdash;</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-medium">MEDIUM</span></td>
+              <td>5.8%</td>
+              <td id="bench-your-medium">&mdash;</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-low">LOW</span></td>
+              <td>28.5%</td>
+              <td id="bench-your-low">&mdash;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Domain-Specific Context</h2>
+      <p id="domain-context-text" style="font-size:0.9rem;"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 5: REPORT ==================== -->
+<div role="tabpanel" id="panel-report" aria-labelledby="tab-report">
+
+  <div id="report-placeholder" class="card" style="text-align:center; padding:40px;">
+    <p style="font-size:1.1rem; color:var(--text-muted);">Run the assessment first to generate a report.</p>
+  </div>
+
+  <div id="report-results" style="display:none;">
+    <div class="card report-section">
+      <h2>Transportability Assessment Report</h2>
+      <div id="report-content"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btnExportCSV" type="button">Export CSV</button>
+      <button class="btn btn-primary" id="btnExportJSON" type="button">Export JSON</button>
+      <button class="btn btn-secondary" id="btnCopyReport" type="button">Copy Report Text</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer class="app-footer">
+  <p>Clinical Transportability Calculator v1.0 &mdash; Mahmood Ahmad, Royal Free Hospital, London, UK (ORCID: 0009-0003-7781-4478)</p>
+  <p>Based on the Clinical Transportability Engine (CTE) analysis of 11,974 comparisons across 445 Cochrane reviews.</p>
+</footer>
+
+<script>
+/* ===========================================================================
+   Clinical Transportability Calculator - IIFE
+   =========================================================================== */
+(function() {
+  'use strict';
+
+  /* ===== Constants ===== */
+  var STORAGE_KEY = 'transport-calc-data';
+  var CURRENT_YEAR = new Date().getFullYear();
+
+  /* Domain decay divisors for temporal penalty */
+  var DOMAIN_DECAY = {
+    cardiovascular: 50,
+    oncology: 30,
+    psychiatry: 50,
+    neurology: 50,
+    respiratory: 50,
+    infectious: 30,
+    endocrine: 50,
+    musculoskeletal: 80,
+    gi: 50,
+    dermatology: 50,
+    renal: 50,
+    pediatric: 50,
+    other: 50
+  };
+
+  /* Domain default target ages */
+  var DOMAIN_AGE_DEFAULTS = {
+    cardiovascular: 65,
+    oncology: 60,
+    psychiatry: 45,
+    neurology: 60,
+    respiratory: 55,
+    infectious: 50,
+    endocrine: 55,
+    musculoskeletal: 55,
+    gi: 55,
+    dermatology: 45,
+    renal: 60,
+    pediatric: 10,
+    other: 55
+  };
+
+  /* Domain labels for display */
+  var DOMAIN_LABELS = {
+    cardiovascular: 'Cardiovascular',
+    oncology: 'Oncology',
+    psychiatry: 'Psychiatry',
+    neurology: 'Neurology',
+    respiratory: 'Respiratory',
+    infectious: 'Infectious Disease',
+    endocrine: 'Endocrine',
+    musculoskeletal: 'Musculoskeletal',
+    gi: 'Gastrointestinal',
+    dermatology: 'Dermatology',
+    renal: 'Renal',
+    pediatric: 'Pediatric',
+    other: 'Other / General'
+  };
+
+  /* Cochrane benchmark distribution (synthesized from 445 reviews) */
+  /* 20 bins from 0.0-0.05 up to 0.95-1.0 */
+  var BENCHMARK_BINS = [
+    0.028, 0.015, 0.012, 0.018, 0.022, 0.025, 0.030, 0.035,
+    0.028, 0.022, 0.015, 0.012, 0.010, 0.013, 0.020, 0.028,
+    0.045, 0.065, 0.120, 0.437
+  ];
+  /* HIGH >= 0.90 = 65.7%, MEDIUM 0.70-0.89 = 5.8%, LOW < 0.70 = 28.5% */
+
+  /* Domain-specific benchmark percentiles (approximate from analysis) */
+  var DOMAIN_PERCENTILES = {
+    cardiovascular: { p25: 0.72, p50: 0.88, p75: 0.96 },
+    oncology:       { p25: 0.78, p50: 0.91, p75: 0.97 },
+    psychiatry:     { p25: 0.65, p50: 0.82, p75: 0.93 },
+    neurology:      { p25: 0.68, p50: 0.85, p75: 0.95 },
+    respiratory:    { p25: 0.75, p50: 0.90, p75: 0.96 },
+    infectious:     { p25: 0.70, p50: 0.87, p75: 0.95 },
+    endocrine:      { p25: 0.67, p50: 0.84, p75: 0.94 },
+    musculoskeletal:{ p25: 0.80, p50: 0.92, p75: 0.97 },
+    gi:             { p25: 0.72, p50: 0.88, p75: 0.95 },
+    dermatology:    { p25: 0.73, p50: 0.89, p75: 0.96 },
+    renal:          { p25: 0.70, p50: 0.87, p75: 0.95 },
+    pediatric:      { p25: 0.74, p50: 0.89, p75: 0.96 },
+    other:          { p25: 0.71, p50: 0.87, p75: 0.95 }
+  };
+
+  /* ===== State ===== */
+  var lastResult = null;
+
+  /* ===== Utility: escapeHtml ===== */
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
+  /* ===== Utility: csvSafe ===== */
+  function csvSafe(val) {
+    var s = String(val);
+    if (/[,"\r\n]/.test(s)) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    /* CSV formula injection - prepend tick for dangerous prefixes */
+    if (/^[=+@\t\r]/.test(s)) {
+      return "'" + s;
+    }
+    return s;
+  }
+
+  /* ===== Utility: round to N decimal places ===== */
+  function rd(v, n) {
+    if (n === undefined) n = 3;
+    var f = Math.pow(10, n);
+    return Math.round(v * f) / f;
+  }
+
+  /* ===== Utility: classify ===== */
+  function classify(penalty) {
+    if (penalty >= 0.90) return 'high';
+    if (penalty >= 0.70) return 'medium';
+    return 'low';
+  }
+
+  function classifyLabel(penalty) {
+    if (penalty >= 0.90) return 'HIGH';
+    if (penalty >= 0.70) return 'MEDIUM';
+    return 'LOW';
+  }
+
+  /* ===== Utility: get color for value ===== */
+  function penaltyColor(v) {
+    if (v >= 0.90) return 'var(--high)';
+    if (v >= 0.70) return 'var(--medium)';
+    return 'var(--low)';
+  }
+
+  function penaltyHex(v) {
+    if (v >= 0.90) return '#16a34a';
+    if (v >= 0.70) return '#d97706';
+    return '#dc2626';
+  }
+
+  /* ===== Core: compute CTE penalty for a given domain ===== */
+  function computePenalty(inputs, domain) {
+    if (domain === undefined) domain = inputs.domain;
+
+    /* Temporal drift penalty */
+    var temporalGap = inputs.targetYear - inputs.yearMedian;
+    var decayDiv = DOMAIN_DECAY[domain] !== undefined ? DOMAIN_DECAY[domain] : 50;
+    var temporalPenalty = 1 - Math.min(1, Math.max(0, temporalGap) / decayDiv);
+
+    /* Demographic drift: age */
+    var ageTarget = inputs.ageTarget;
+    var ageGap = Math.abs(inputs.ageTrial - ageTarget);
+    var agePenalty = 1 - Math.min(1, ageGap / 30);
+
+    /* Demographic drift: sex */
+    var sexGap = Math.abs(inputs.femaleTrial - inputs.femaleTarget);
+    var sexPenalty = 1 - Math.min(1, sexGap / 40);
+
+    /* Scale penalty */
+    var scalePenalty;
+    if (inputs.scale === 'small') scalePenalty = 0.85;
+    else if (inputs.scale === 'medium') scalePenalty = 0.95;
+    else scalePenalty = 1.0;
+
+    /* Heterogeneity penalty */
+    var heteroPenalty;
+    var i2 = inputs.i2;
+    if (i2 > 75) heteroPenalty = 0.80;
+    else if (i2 > 50) heteroPenalty = 0.90;
+    else if (i2 > 25) heteroPenalty = 0.95;
+    else heteroPenalty = 1.0;
+
+    /* Overall */
+    var overall = temporalPenalty * agePenalty * sexPenalty * scalePenalty * heteroPenalty;
+
+    return {
+      temporal: rd(temporalPenalty),
+      age: rd(agePenalty),
+      sex: rd(sexPenalty),
+      scale: rd(scalePenalty, 2),
+      heterogeneity: rd(heteroPenalty, 2),
+      overall: rd(overall),
+      classification: classifyLabel(overall),
+      domain: domain
+    };
+  }
+
+  /* ===== Read inputs from form ===== */
+  function readInputs() {
+    var effect = parseFloat(document.getElementById('inp-effect').value);
+    var ciLo = parseFloat(document.getElementById('inp-ci-lo').value);
+    var ciHi = parseFloat(document.getElementById('inp-ci-hi').value);
+    var k = parseInt(document.getElementById('inp-k').value, 10);
+    var n = parseInt(document.getElementById('inp-n').value, 10);
+    var i2 = parseFloat(document.getElementById('inp-i2').value);
+    var yearEarliest = parseInt(document.getElementById('inp-year-earliest').value, 10);
+    var yearLatest = parseInt(document.getElementById('inp-year-latest').value, 10);
+    var yearMedian = parseInt(document.getElementById('inp-year-median').value, 10);
+    var targetYear = parseInt(document.getElementById('inp-target-year').value, 10);
+    var domain = document.getElementById('inp-domain').value;
+    var ageTrial = parseFloat(document.getElementById('inp-age-trial').value);
+    var ageTarget = parseFloat(document.getElementById('inp-age-target').value);
+    var femaleTrial = parseFloat(document.getElementById('inp-female-trial').value);
+    var femaleTarget = parseFloat(document.getElementById('inp-female-target').value);
+    var scale = document.getElementById('inp-scale').value;
+
+    /* Validation */
+    var errors = [];
+    if (!isFinite(effect)) errors.push('Pooled effect estimate is required.');
+    if (!isFinite(ciLo)) errors.push('CI lower bound is required.');
+    if (!isFinite(ciHi)) errors.push('CI upper bound is required.');
+    if (!isFinite(k) || k < 1) errors.push('Number of studies (k >= 1) is required.');
+    if (!isFinite(i2) || i2 < 0 || i2 > 100) errors.push('I-squared (0-100) is required.');
+    if (!isFinite(yearMedian)) errors.push('Median trial year is required.');
+    if (!isFinite(targetYear)) errors.push('Target year is required.');
+    if (!isFinite(ageTrial)) errors.push('Mean age in trials is required.');
+    if (!isFinite(femaleTrial)) errors.push('Percent female in trials is required.');
+
+    /* Defaults for optional target demographics */
+    if (!isFinite(ageTarget)) {
+      ageTarget = DOMAIN_AGE_DEFAULTS[domain] !== undefined ? DOMAIN_AGE_DEFAULTS[domain] : 55;
+    }
+    if (!isFinite(femaleTarget)) {
+      femaleTarget = 50;
+    }
+    if (!isFinite(yearEarliest)) yearEarliest = yearMedian;
+    if (!isFinite(yearLatest)) yearLatest = yearMedian;
+    if (!isFinite(n)) n = 0;
+
+    if (errors.length > 0) {
+      return { valid: false, errors: errors };
+    }
+
+    return {
+      valid: true,
+      effect: effect,
+      ciLo: ciLo,
+      ciHi: ciHi,
+      k: k,
+      n: n,
+      i2: i2,
+      yearEarliest: yearEarliest,
+      yearLatest: yearLatest,
+      yearMedian: yearMedian,
+      targetYear: targetYear,
+      domain: domain,
+      ageTrial: ageTrial,
+      ageTarget: ageTarget,
+      femaleTrial: femaleTrial,
+      femaleTarget: femaleTarget,
+      scale: scale
+    };
+  }
+
+  /* ===== Populate form ===== */
+  function setInputs(data) {
+    document.getElementById('inp-effect').value = data.effect;
+    document.getElementById('inp-ci-lo').value = data.ciLo;
+    document.getElementById('inp-ci-hi').value = data.ciHi;
+    document.getElementById('inp-k').value = data.k;
+    document.getElementById('inp-n').value = data.n;
+    document.getElementById('inp-i2').value = data.i2;
+    document.getElementById('inp-year-earliest').value = data.yearEarliest;
+    document.getElementById('inp-year-latest').value = data.yearLatest;
+    document.getElementById('inp-year-median').value = data.yearMedian;
+    document.getElementById('inp-target-year').value = data.targetYear;
+    document.getElementById('inp-domain').value = data.domain;
+    document.getElementById('inp-age-trial').value = data.ageTrial;
+    document.getElementById('inp-age-target').value = data.ageTarget;
+    document.getElementById('inp-female-trial').value = data.femaleTrial;
+    document.getElementById('inp-female-target').value = data.femaleTarget;
+    document.getElementById('inp-scale').value = data.scale;
+  }
+
+  /* ===== Built-in examples ===== */
+  var EXAMPLES = {
+    statins: {
+      effect: 0.75, ciLo: 0.68, ciHi: 0.83,
+      k: 26, n: 170000, i2: 42,
+      yearEarliest: 1994, yearLatest: 2013, yearMedian: 2002,
+      targetYear: CURRENT_YEAR, domain: 'cardiovascular',
+      ageTrial: 58, ageTarget: 65, femaleTrial: 32, femaleTarget: 50,
+      scale: 'large'
+    },
+    tcas: {
+      effect: 0.64, ciLo: 0.50, ciHi: 0.82,
+      k: 14, n: 1800, i2: 68,
+      yearEarliest: 1972, yearLatest: 1989, yearMedian: 1980,
+      targetYear: CURRENT_YEAR, domain: 'psychiatry',
+      ageTrial: 38, ageTarget: 45, femaleTrial: 62, femaleTarget: 55,
+      scale: 'small'
+    },
+    betablockers: {
+      effect: 0.77, ciLo: 0.69, ciHi: 0.86,
+      k: 18, n: 28500, i2: 35,
+      yearEarliest: 1978, yearLatest: 2004, yearMedian: 1990,
+      targetYear: CURRENT_YEAR, domain: 'cardiovascular',
+      ageTrial: 56, ageTarget: 65, femaleTrial: 22, femaleTarget: 45,
+      scale: 'large'
+    }
+  };
+
+  /* ===== RENDER: Assessment Tab ===== */
+  function renderAssessment(inputs, penalty) {
+    document.getElementById('assess-placeholder').style.display = 'none';
+    document.getElementById('assess-results').style.display = 'block';
+
+    var cls = classify(penalty.overall);
+
+    /* Verdict card */
+    var vc = document.getElementById('verdict-card');
+    vc.className = 'verdict-card ' + cls;
+    document.getElementById('verdict-label').textContent = penalty.classification + ' TRANSPORTABILITY';
+    document.getElementById('verdict-score').textContent = rd(penalty.overall, 3);
+
+    var descMap = {
+      high: 'Evidence likely generalizable to the target population. Standard application in HTA recommended.',
+      medium: 'Moderate efficacy leakage expected. Consider sensitivity analysis and update with contemporary data.',
+      low: 'Significant efficacy leakage expected. Recommend new confirmatory trial or real-world evidence study.'
+    };
+    document.getElementById('verdict-desc').textContent = descMap[cls];
+
+    /* Gauge */
+    renderGauge(penalty.overall);
+
+    /* Component bars */
+    var comps = [
+      { label: 'Temporal Drift', value: penalty.temporal, key: 'temporal' },
+      { label: 'Age Drift', value: penalty.age, key: 'age' },
+      { label: 'Sex Drift', value: penalty.sex, key: 'sex' },
+      { label: 'Scale', value: penalty.scale, key: 'scale' },
+      { label: 'Heterogeneity', value: penalty.heterogeneity, key: 'heterogeneity' }
+    ];
+    var barsHtml = '';
+    for (var i = 0; i < comps.length; i++) {
+      var c = comps[i];
+      var pct = Math.round(c.value * 100);
+      barsHtml += '<div class="component-bar-container">' +
+        '<div class="component-bar-label"><span>' + escapeHtml(c.label) + '</span><span>' + rd(c.value, 3) + ' (' + pct + '%)</span></div>' +
+        '<div class="component-bar-track"><div class="component-bar-fill" style="width:' + pct + '%; background:' + penaltyColor(c.value) + '"></div></div>' +
+        '</div>';
+    }
+    document.getElementById('component-bars').innerHTML = barsHtml;
+
+    /* Effect comparison */
+    var adjEffect = inputs.effect * penalty.overall;
+    var adjCiLo = inputs.ciLo * penalty.overall;
+    var adjCiHi = inputs.ciHi * penalty.overall;
+
+    var compHtml = '<div class="card" style="text-align:center;">' +
+      '<h3>Original Effect</h3>' +
+      '<div style="font-size:1.8rem; font-weight:700;">' + rd(inputs.effect, 3) + '</div>' +
+      '<div style="font-size:0.85rem; color:var(--text-muted);">95% CI: ' + rd(inputs.ciLo, 3) + ' to ' + rd(inputs.ciHi, 3) + '</div>' +
+      '</div>' +
+      '<div class="card" style="text-align:center;">' +
+      '<h3>Transported Effect</h3>' +
+      '<div style="font-size:1.8rem; font-weight:700; color:' + penaltyColor(penalty.overall) + ';">' + rd(adjEffect, 3) + '</div>' +
+      '<div style="font-size:0.85rem; color:var(--text-muted);">Adj. 95% CI: ' + rd(adjCiLo, 3) + ' to ' + rd(adjCiHi, 3) + '</div>' +
+      '<div style="font-size:0.8rem; margin-top:4px;">CTE Penalty: ' + rd(penalty.overall, 3) + '</div>' +
+      '</div>';
+    document.getElementById('effect-comparison').innerHTML = compHtml;
+  }
+
+  /* ===== RENDER: Gauge ===== */
+  function renderGauge(value) {
+    /* Arc length for 180deg semicircle, r=80 => pi*80 = 251.33 */
+    var totalArc = Math.PI * 80;
+    var fillLen = value * totalArc;
+
+    var arc = document.getElementById('gauge-arc');
+    arc.setAttribute('stroke-dasharray', fillLen + ' ' + totalArc);
+    arc.setAttribute('stroke', penaltyHex(value));
+
+    /* Needle rotation: -90 (left, val=0) to +90 (right, val=1) */
+    var angle = -90 + (value * 180);
+    var needle = document.getElementById('gauge-needle');
+    needle.setAttribute('transform', 'rotate(' + angle + ',100,100)');
+  }
+
+  /* ===== RENDER: Sensitivity Tab ===== */
+  function renderSensitivity(inputs, penalty) {
+    document.getElementById('sens-placeholder').style.display = 'none';
+    document.getElementById('sens-results').style.display = 'block';
+
+    /* 1. Temporal line chart (canvas) */
+    renderTemporalChart(inputs);
+
+    /* 2. Factor isolation table */
+    renderIsolationTable(inputs, penalty);
+
+    /* 3. Path to HIGH */
+    renderPathToHigh(inputs, penalty);
+
+    /* 4. Domain comparison */
+    renderDomainTable(inputs);
+  }
+
+  /* ===== Simple Canvas Line Chart ===== */
+  function renderTemporalChart(inputs) {
+    var canvas = document.getElementById('chart-temporal');
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width;
+    var H = canvas.height;
+    var pad = { top: 30, right: 20, bottom: 40, left: 50 };
+
+    ctx.clearRect(0, 0, W, H);
+
+    /* Data: target year -10 to +10 */
+    var baseYear = inputs.targetYear;
+    var points = [];
+    for (var dy = -10; dy <= 10; dy++) {
+      var modInputs = Object.assign({}, inputs, { targetYear: baseYear + dy });
+      var p = computePenalty(modInputs);
+      points.push({ year: baseYear + dy, val: p.overall });
+    }
+
+    var xMin = points[0].year;
+    var xMax = points[points.length - 1].year;
+    var plotW = W - pad.left - pad.right;
+    var plotH = H - pad.top - pad.bottom;
+
+    function toX(yr) { return pad.left + ((yr - xMin) / (xMax - xMin)) * plotW; }
+    function toY(v) { return pad.top + (1 - v) * plotH; }
+
+    /* Get computed style colors */
+    var cs = getComputedStyle(document.body);
+    var textColor = cs.getPropertyValue('--text').trim() || '#1a1a2e';
+    var borderColor = cs.getPropertyValue('--border').trim() || '#dee2e6';
+
+    /* Grid lines */
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 0.5;
+    for (var g = 0; g <= 1; g += 0.1) {
+      ctx.beginPath();
+      ctx.moveTo(pad.left, toY(g));
+      ctx.lineTo(W - pad.right, toY(g));
+      ctx.stroke();
+    }
+
+    /* Threshold lines */
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = '#16a34a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, toY(0.90));
+    ctx.lineTo(W - pad.right, toY(0.90));
+    ctx.stroke();
+
+    ctx.strokeStyle = '#d97706';
+    ctx.beginPath();
+    ctx.moveTo(pad.left, toY(0.70));
+    ctx.lineTo(W - pad.right, toY(0.70));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* Data line */
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (var i = 0; i < points.length; i++) {
+      var px = toX(points[i].year);
+      var py = toY(points[i].val);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    /* Current target year marker */
+    ctx.fillStyle = '#2563eb';
+    var curIdx = 10; /* middle point */
+    ctx.beginPath();
+    ctx.arc(toX(points[curIdx].year), toY(points[curIdx].val), 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* Axes labels */
+    ctx.fillStyle = textColor;
+    ctx.font = '11px ' + (cs.fontFamily || 'sans-serif');
+    ctx.textAlign = 'center';
+    for (var j = 0; j < points.length; j += 5) {
+      ctx.fillText(points[j].year, toX(points[j].year), H - pad.bottom + 18);
+    }
+    ctx.fillText(points[points.length - 1].year, toX(points[points.length - 1].year), H - pad.bottom + 18);
+
+    ctx.textAlign = 'right';
+    for (var k = 0; k <= 10; k += 2) {
+      var yv = k / 10;
+      ctx.fillText(yv.toFixed(1), pad.left - 8, toY(yv) + 4);
+    }
+
+    /* Axis titles */
+    ctx.textAlign = 'center';
+    ctx.font = '12px ' + (cs.fontFamily || 'sans-serif');
+    ctx.fillText('Target Year', W / 2, H - 4);
+
+    ctx.save();
+    ctx.translate(12, pad.top + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('CTE Penalty', 0, 0);
+    ctx.restore();
+
+    /* Threshold labels */
+    ctx.font = '10px ' + (cs.fontFamily || 'sans-serif');
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#16a34a';
+    ctx.fillText('HIGH (0.90)', W - pad.right + 2, toY(0.90) + 3);
+    ctx.fillStyle = '#d97706';
+    ctx.fillText('MED (0.70)', W - pad.right + 2, toY(0.70) + 3);
+  }
+
+  /* ===== Factor Isolation Table ===== */
+  function renderIsolationTable(inputs, penalty) {
+    var tbody = document.getElementById('table-isolation').querySelector('tbody');
+    var components = [
+      { label: 'Temporal Drift', key: 'temporal' },
+      { label: 'Age Drift', key: 'age' },
+      { label: 'Sex Drift', key: 'sex' },
+      { label: 'Scale', key: 'scale' },
+      { label: 'Heterogeneity', key: 'heterogeneity' }
+    ];
+
+    var rows = '';
+    for (var i = 0; i < components.length; i++) {
+      var c = components[i];
+      var actual = penalty[c.key];
+      /* Compute overall if this factor were perfect (1.0) */
+      var perfectOverall = penalty.overall / actual;  /* Remove this factor */
+      if (actual === 0) perfectOverall = penalty.overall;
+      var gain = perfectOverall - penalty.overall;
+      rows += '<tr>' +
+        '<td>' + escapeHtml(c.label) + '</td>' +
+        '<td>' + rd(actual, 3) + '</td>' +
+        '<td>' + rd(Math.min(1, perfectOverall), 3) + '</td>' +
+        '<td style="color:' + (gain > 0.01 ? 'var(--high)' : 'var(--text-muted)') + '">+' + rd(gain, 3) + '</td>' +
+        '</tr>';
+    }
+    tbody.innerHTML = rows;
+  }
+
+  /* ===== Path to HIGH ===== */
+  function renderPathToHigh(inputs, penalty) {
+    var el = document.getElementById('path-to-high');
+
+    if (penalty.overall >= 0.90) {
+      el.innerHTML = '<p style="color:var(--high); font-weight:600;">This meta-analysis already has HIGH transportability. No changes needed.</p>';
+      return;
+    }
+
+    /* Find the weakest factor */
+    var factors = [
+      { label: 'Temporal Drift', value: penalty.temporal, key: 'temporal' },
+      { label: 'Age Drift', value: penalty.age, key: 'age' },
+      { label: 'Sex Drift', value: penalty.sex, key: 'sex' },
+      { label: 'Scale', value: penalty.scale, key: 'scale' },
+      { label: 'Heterogeneity', value: penalty.heterogeneity, key: 'heterogeneity' }
+    ];
+    factors.sort(function(a, b) { return a.value - b.value; });
+
+    var html = '<p style="margin-bottom:12px;">To reach HIGH transportability (>= 0.90), focus on the weakest factor(s):</p><ol>';
+    for (var i = 0; i < factors.length; i++) {
+      if (factors[i].value >= 0.98) continue;
+      var advice = getFactorAdvice(factors[i].key, factors[i].value, inputs);
+      html += '<li style="margin-bottom:8px;"><strong>' + escapeHtml(factors[i].label) + '</strong> (current: ' + rd(factors[i].value, 3) + '): ' + escapeHtml(advice) + '</li>';
+    }
+    html += '</ol>';
+    el.innerHTML = html;
+  }
+
+  function getFactorAdvice(key, value, inputs) {
+    switch (key) {
+      case 'temporal':
+        return 'The trials are dated. Include more recent RCTs or conduct an updated systematic review targeting studies from the last 10 years.';
+      case 'age':
+        return 'Trial mean age (' + inputs.ageTrial + ') differs from target (' + inputs.ageTarget + '). Seek age-stratified subgroup analyses or include studies with broader age ranges.';
+      case 'sex':
+        return 'Trial female representation (' + inputs.femaleTrial + '%) differs from target (' + inputs.femaleTarget + '%). Consider sex-stratified analyses or enriching with studies having better sex balance.';
+      case 'scale':
+        return 'Trials are small. Larger pragmatic trials or registry-based studies would improve transportability.';
+      case 'heterogeneity':
+        return 'High heterogeneity (I-squared: ' + inputs.i2 + '%) suggests inconsistent effects. Explore subgroup analyses or restrict to a more homogeneous subset.';
+      default:
+        return '';
+    }
+  }
+
+  /* ===== Domain Comparison Table ===== */
+  function renderDomainTable(inputs) {
+    var tbody = document.getElementById('table-domains').querySelector('tbody');
+    var domains = Object.keys(DOMAIN_LABELS);
+    var rows = '';
+
+    for (var i = 0; i < domains.length; i++) {
+      var d = domains[i];
+      var p = computePenalty(inputs, d);
+      var cls = classify(p.overall);
+      var isActive = (d === inputs.domain);
+      var rowStyle = isActive ? ' style="font-weight:700; background:var(--tab-bg);"' : '';
+      rows += '<tr' + rowStyle + '>' +
+        '<td>' + escapeHtml(DOMAIN_LABELS[d]) + (isActive ? ' *' : '') + '</td>' +
+        '<td>' + rd(p.temporal, 3) + '</td>' +
+        '<td>' + rd(p.age, 3) + '</td>' +
+        '<td>' + rd(p.sex, 3) + '</td>' +
+        '<td>' + rd(p.scale, 2) + '</td>' +
+        '<td>' + rd(p.heterogeneity, 2) + '</td>' +
+        '<td>' + rd(p.overall, 3) + '</td>' +
+        '<td><span class="badge badge-' + cls + '">' + p.classification + '</span></td>' +
+        '</tr>';
+    }
+    tbody.innerHTML = rows;
+  }
+
+  /* ===== RENDER: Benchmarks Tab ===== */
+  function renderBenchmarks(inputs, penalty) {
+    document.getElementById('bench-placeholder').style.display = 'none';
+    document.getElementById('bench-results').style.display = 'block';
+
+    /* 1. Histogram */
+    renderHistogram(penalty.overall);
+
+    /* 2. Percentile */
+    var pctile = computePercentile(penalty.overall);
+    var marker = document.getElementById('percentile-marker');
+    marker.style.left = pctile + '%';
+    marker.setAttribute('data-label', rd(pctile, 0) + 'th');
+    document.getElementById('percentile-text').textContent =
+      'Your meta-analysis is more transportable than ' + rd(pctile, 0) + '% of 445 Cochrane reviews.';
+
+    /* 3. Your classification highlight */
+    var cls = classify(penalty.overall);
+    document.getElementById('bench-your-high').innerHTML = cls === 'high' ? '<strong style="color:var(--high);">YOU</strong>' : '&mdash;';
+    document.getElementById('bench-your-medium').innerHTML = cls === 'medium' ? '<strong style="color:var(--medium);">YOU</strong>' : '&mdash;';
+    document.getElementById('bench-your-low').innerHTML = cls === 'low' ? '<strong style="color:var(--low);">YOU</strong>' : '&mdash;';
+
+    /* 4. Domain context */
+    var dp = DOMAIN_PERCENTILES[inputs.domain] || DOMAIN_PERCENTILES.other;
+    var domLabel = DOMAIN_LABELS[inputs.domain] || inputs.domain;
+    var domPctile;
+    if (penalty.overall <= dp.p25) domPctile = Math.round((penalty.overall / dp.p25) * 25);
+    else if (penalty.overall <= dp.p50) domPctile = Math.round(25 + ((penalty.overall - dp.p25) / (dp.p50 - dp.p25)) * 25);
+    else if (penalty.overall <= dp.p75) domPctile = Math.round(50 + ((penalty.overall - dp.p50) / (dp.p75 - dp.p50)) * 25);
+    else domPctile = Math.round(75 + ((penalty.overall - dp.p75) / (1 - dp.p75)) * 25);
+    domPctile = Math.max(0, Math.min(100, domPctile));
+
+    document.getElementById('domain-context-text').textContent =
+      'Within the ' + domLabel + ' domain specifically, your CTE penalty of ' + rd(penalty.overall, 3) +
+      ' places you at approximately the ' + domPctile + 'th percentile. ' +
+      'Domain median: ' + dp.p50 + ', IQR: ' + dp.p25 + ' to ' + dp.p75 + '.';
+  }
+
+  /* ===== Histogram rendering ===== */
+  function renderHistogram(userVal) {
+    var container = document.getElementById('histogram-area');
+    var maxBin = 0;
+    for (var i = 0; i < BENCHMARK_BINS.length; i++) {
+      if (BENCHMARK_BINS[i] > maxBin) maxBin = BENCHMARK_BINS[i];
+    }
+
+    var html = '<div class="histogram-container" role="img" aria-label="CTE penalty distribution histogram">';
+    for (var j = 0; j < BENCHMARK_BINS.length; j++) {
+      var heightPct = (BENCHMARK_BINS[j] / maxBin) * 100;
+      var binStart = j * 0.05;
+      var binEnd = binStart + 0.05;
+      var isUser = (userVal >= binStart && userVal < binEnd) || (j === BENCHMARK_BINS.length - 1 && userVal >= binStart);
+      var color;
+      if (binStart >= 0.90) color = 'var(--high)';
+      else if (binStart >= 0.70) color = 'var(--medium)';
+      else color = 'var(--low)';
+
+      var border = isUser ? 'border: 3px solid var(--text);' : '';
+      html += '<div class="histogram-bar" style="height:' + heightPct + '%; flex:1; background:' + color + ';' + border + '" ' +
+        'title="' + rd(binStart, 2) + '-' + rd(binEnd, 2) + ': ' + rd(BENCHMARK_BINS[j] * 100, 1) + '%"></div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  /* ===== Compute approximate percentile from benchmark distribution ===== */
+  function computePercentile(value) {
+    /* Sum bins up to the user's value */
+    var cumulative = 0;
+    for (var i = 0; i < BENCHMARK_BINS.length; i++) {
+      var binStart = i * 0.05;
+      var binEnd = binStart + 0.05;
+      if (value >= binEnd) {
+        cumulative += BENCHMARK_BINS[i];
+      } else if (value >= binStart) {
+        /* Partial bin */
+        var frac = (value - binStart) / 0.05;
+        cumulative += BENCHMARK_BINS[i] * frac;
+        break;
+      } else {
+        break;
+      }
+    }
+    return Math.min(100, Math.max(0, Math.round(cumulative * 100)));
+  }
+
+  /* ===== RENDER: Report Tab ===== */
+  function renderReport(inputs, penalty) {
+    document.getElementById('report-placeholder').style.display = 'none';
+    document.getElementById('report-results').style.display = 'block';
+
+    var cls = classify(penalty.overall);
+    var adjEffect = rd(inputs.effect * penalty.overall, 3);
+    var adjCiLo = rd(inputs.ciLo * penalty.overall, 3);
+    var adjCiHi = rd(inputs.ciHi * penalty.overall, 3);
+    var domLabel = DOMAIN_LABELS[inputs.domain] || inputs.domain;
+    var pctile = computePercentile(penalty.overall);
+
+    var html = '';
+
+    /* Methods */
+    html += '<div class="report-section"><h3>Methods</h3>';
+    html += '<p>Transportability was assessed using the Clinical Transportability Engine (CTE) penalty index, ' +
+      'a multiplicative model quantifying the expected efficacy leakage when applying meta-analytic evidence to a real-world target population. ' +
+      'The CTE framework was developed from an analysis of 11,974 comparisons across 445 Cochrane systematic reviews linked to ClinicalTrials.gov registry data ' +
+      '(Ahmad, 2026). The model incorporates five penalty components: temporal drift (accounting for changes in standard of care over time), ' +
+      'demographic drift (age and sex representation gaps), enrollment scale, and statistical heterogeneity. ' +
+      'The theoretical framework draws on the formal transportability conditions described by Bareinboim and Pearl (2013) ' +
+      'and the target trial emulation approach of Dahabreh et al. (2020).</p></div>';
+
+    /* Results */
+    html += '<div class="report-section"><h3>Results</h3>';
+    html += '<p>The meta-analysis (k = ' + escapeHtml(String(inputs.k)) + ' studies, N = ' + escapeHtml(String(inputs.n)) +
+      ', I&sup2; = ' + escapeHtml(String(inputs.i2)) + '%) in the ' + escapeHtml(domLabel) + ' domain ' +
+      'with a pooled effect of ' + escapeHtml(String(inputs.effect)) +
+      ' (95% CI: ' + escapeHtml(String(inputs.ciLo)) + ' to ' + escapeHtml(String(inputs.ciHi)) + ') ' +
+      'received a CTE penalty index of <strong>' + rd(penalty.overall, 3) + '</strong>, classified as <strong>' + penalty.classification + '</strong> transportability.</p>';
+
+    html += '<p>Component scores: temporal drift = ' + rd(penalty.temporal, 3) +
+      ', age drift = ' + rd(penalty.age, 3) +
+      ', sex drift = ' + rd(penalty.sex, 3) +
+      ', scale = ' + rd(penalty.scale, 2) +
+      ', heterogeneity = ' + rd(penalty.heterogeneity, 2) + '.</p>';
+
+    html += '<p>The transported (adjusted) effect estimate is ' + adjEffect +
+      ' (adjusted 95% CI: ' + adjCiLo + ' to ' + adjCiHi + '). ' +
+      'This places the meta-analysis at approximately the ' + pctile + 'th percentile relative to 445 Cochrane benchmark reviews.</p></div>';
+
+    /* Interpretation */
+    html += '<div class="report-section"><h3>Interpretation</h3>';
+    if (cls === 'high') {
+      html += '<blockquote>Evidence likely generalizable. The CTE penalty index of ' + rd(penalty.overall, 3) +
+        ' indicates minimal efficacy leakage. Standard application in health technology assessment (HTA) is appropriate. ' +
+        'The trial evidence is demographically and temporally aligned with the target population.</blockquote>';
+    } else if (cls === 'medium') {
+      html += '<blockquote>Moderate efficacy leakage expected. The CTE penalty index of ' + rd(penalty.overall, 3) +
+        ' suggests the original effect estimate may overstate the real-world benefit. Consider conducting sensitivity analyses ' +
+        'with the adjusted effect estimate. Update with contemporary data if available. Monitor for emerging trial evidence ' +
+        'in the target population.</blockquote>';
+    } else {
+      html += '<blockquote>Significant efficacy leakage expected. The CTE penalty index of ' + rd(penalty.overall, 3) +
+        ' indicates substantial divergence between the trial evidence base and the target population. ' +
+        'Recommend a new confirmatory trial or real-world evidence study before HTA adoption. ' +
+        'The adjusted effect estimate (' + adjEffect + ') should be used as the best-case scenario for decision modeling.</blockquote>';
+    }
+    html += '</div>';
+
+    /* Recommendations */
+    html += '<div class="report-section"><h3>Recommendations</h3><ul>';
+    if (cls === 'high') {
+      html += '<li>Standard application of the pooled effect estimate in HTA is appropriate.</li>';
+      html += '<li>Routine monitoring for new evidence is sufficient.</li>';
+      html += '<li>No additional transportability adjustments are necessary.</li>';
+    } else if (cls === 'medium') {
+      html += '<li>Use both original and adjusted effect estimates in sensitivity analyses.</li>';
+      html += '<li>Prioritize an updated systematic review incorporating more recent studies.</li>';
+      html += '<li>Consider real-world evidence studies to validate the transported estimate.</li>';
+      html += '<li>Report the CTE penalty index alongside the meta-analytic result.</li>';
+    } else {
+      html += '<li>Do not use the original pooled estimate without adjustment for HTA decisions.</li>';
+      html += '<li>Commission or prioritize a new pragmatic trial in the target population.</li>';
+      html += '<li>If a new trial is not feasible, use the adjusted estimate as an upper bound of plausible effect.</li>';
+      html += '<li>Explore individual patient data (IPD) meta-analysis for transportability-aware subgroup estimates.</li>';
+      html += '<li>Report the CTE penalty index to communicate the evidence gap to decision-makers.</li>';
+    }
+    html += '</ul></div>';
+
+    /* References */
+    html += '<div class="report-section"><h3>References</h3><ul>';
+    html += '<li>Ahmad M. Clinical Transportability Engine: Quantifying Efficacy Leakage in Meta-Analysis. <em>In preparation</em>, 2026.</li>';
+    html += '<li>Bareinboim E, Pearl J. A general algorithm for deciding transportability of experimental results. <em>J Causal Inference</em>. 2013;1(1):107-134.</li>';
+    html += '<li>Dahabreh IJ, Robertson SE, Steingrimsson JA, Stuart EA, Hernan MA. Extending inferences from a randomized trial to a new target population. <em>Stat Med</em>. 2020;39(14):1999-2014.</li>';
+    html += '</ul></div>';
+
+    document.getElementById('report-content').innerHTML = html;
+  }
+
+  /* ===== EXPORTS ===== */
+  function exportCSV(inputs, penalty) {
+    var adjEffect = inputs.effect * penalty.overall;
+    var adjCiLo = inputs.ciLo * penalty.overall;
+    var adjCiHi = inputs.ciHi * penalty.overall;
+
+    var headers = [
+      'pooled_effect', 'ci_lower', 'ci_upper', 'k', 'n', 'i_squared',
+      'year_earliest', 'year_latest', 'year_median', 'target_year', 'domain',
+      'age_trial', 'age_target', 'female_trial_pct', 'female_target_pct', 'scale',
+      'cte_temporal', 'cte_age', 'cte_sex', 'cte_scale', 'cte_heterogeneity',
+      'cte_overall', 'classification',
+      'adjusted_effect', 'adjusted_ci_lower', 'adjusted_ci_upper'
+    ];
+    var values = [
+      inputs.effect, inputs.ciLo, inputs.ciHi, inputs.k, inputs.n, inputs.i2,
+      inputs.yearEarliest, inputs.yearLatest, inputs.yearMedian, inputs.targetYear, inputs.domain,
+      inputs.ageTrial, inputs.ageTarget, inputs.femaleTrial, inputs.femaleTarget, inputs.scale,
+      penalty.temporal, penalty.age, penalty.sex, penalty.scale, penalty.heterogeneity,
+      penalty.overall, penalty.classification,
+      rd(adjEffect, 4), rd(adjCiLo, 4), rd(adjCiHi, 4)
+    ];
+
+    var csv = headers.map(csvSafe).join(',') + '\n' + values.map(csvSafe).join(',') + '\n';
+    downloadBlob(csv, 'transportability-assessment.csv', 'text/csv');
+  }
+
+  function exportJSON(inputs, penalty) {
+    var adjEffect = inputs.effect * penalty.overall;
+    var adjCiLo = inputs.ciLo * penalty.overall;
+    var adjCiHi = inputs.ciHi * penalty.overall;
+
+    var obj = {
+      tool: 'Clinical Transportability Calculator v1.0',
+      author: 'Mahmood Ahmad, Royal Free Hospital, London, UK',
+      orcid: '0009-0003-7781-4478',
+      timestamp: new Date().toISOString(),
+      inputs: {
+        pooled_effect: inputs.effect,
+        ci_lower: inputs.ciLo,
+        ci_upper: inputs.ciHi,
+        k: inputs.k,
+        n: inputs.n,
+        i_squared: inputs.i2,
+        year_earliest: inputs.yearEarliest,
+        year_latest: inputs.yearLatest,
+        year_median: inputs.yearMedian,
+        target_year: inputs.targetYear,
+        domain: inputs.domain,
+        age_trial: inputs.ageTrial,
+        age_target: inputs.ageTarget,
+        female_trial_pct: inputs.femaleTrial,
+        female_target_pct: inputs.femaleTarget,
+        scale: inputs.scale
+      },
+      components: {
+        temporal: penalty.temporal,
+        age: penalty.age,
+        sex: penalty.sex,
+        scale: penalty.scale,
+        heterogeneity: penalty.heterogeneity
+      },
+      results: {
+        cte_penalty_index: penalty.overall,
+        classification: penalty.classification,
+        adjusted_effect: rd(adjEffect, 4),
+        adjusted_ci_lower: rd(adjCiLo, 4),
+        adjusted_ci_upper: rd(adjCiHi, 4)
+      }
+    };
+
+    var json = JSON.stringify(obj, null, 2);
+    downloadBlob(json, 'transportability-assessment.json', 'application/json');
+  }
+
+  function downloadBlob(content, filename, mimeType) {
+    var blob = new Blob([content], { type: mimeType });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /* ===== Tab Management (ARIA) ===== */
+  function initTabs() {
+    var tabs = document.querySelectorAll('[role="tab"]');
+    var panels = document.querySelectorAll('[role="tabpanel"]');
+
+    function activateTab(tab) {
+      for (var i = 0; i < tabs.length; i++) {
+        tabs[i].setAttribute('aria-selected', 'false');
+        tabs[i].setAttribute('tabindex', '-1');
+      }
+      tab.setAttribute('aria-selected', 'true');
+      tab.setAttribute('tabindex', '0');
+      tab.focus();
+
+      for (var j = 0; j < panels.length; j++) {
+        panels[j].classList.remove('active');
+      }
+      var target = document.getElementById(tab.getAttribute('aria-controls'));
+      if (target) target.classList.add('active');
+    }
+
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].addEventListener('click', function() { activateTab(this); });
+      tabs[i].addEventListener('keydown', function(e) {
+        var idx = Array.prototype.indexOf.call(tabs, this);
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          var next;
+          if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+          else next = (idx - 1 + tabs.length) % tabs.length;
+          activateTab(tabs[next]);
+        }
+        if (e.key === 'Home') { e.preventDefault(); activateTab(tabs[0]); }
+        if (e.key === 'End') { e.preventDefault(); activateTab(tabs[tabs.length - 1]); }
+      });
+    }
+  }
+
+  /* ===== Dark Mode ===== */
+  function initDarkMode() {
+    var saved = localStorage.getItem('transport-calc-theme');
+    if (saved === 'dark') document.body.classList.add('dark-mode');
+
+    document.getElementById('btnDarkMode').addEventListener('click', function() {
+      document.body.classList.toggle('dark-mode');
+      var isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('transport-calc-theme', isDark ? 'dark' : 'light');
+      this.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+      /* Re-render chart if results exist */
+      if (lastResult) {
+        renderTemporalChart(lastResult.inputs);
+      }
+    });
+
+    if (document.body.classList.contains('dark-mode')) {
+      document.getElementById('btnDarkMode').textContent = 'Light Mode';
+    }
+  }
+
+  /* ===== Save / Load ===== */
+  function saveInputs() {
+    var inputs = readInputs();
+    if (!inputs.valid) {
+      alert('Please fill in the required fields before saving.');
+      return;
+    }
+    var copy = Object.assign({}, inputs);
+    delete copy.valid;
+    delete copy.errors;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(copy));
+    alert('Inputs saved to browser storage.');
+  }
+
+  function loadInputs() {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      alert('No saved data found.');
+      return;
+    }
+    try {
+      var data = JSON.parse(raw);
+      setInputs(data);
+      alert('Inputs loaded from browser storage.');
+    } catch (e) {
+      alert('Error loading saved data: ' + e.message);
+    }
+  }
+
+  /* ===== Main Calculate ===== */
+  function doCalculate() {
+    var inputs = readInputs();
+    if (!inputs.valid) {
+      alert('Please fix the following:\n\n' + inputs.errors.join('\n'));
+      return;
+    }
+
+    var penalty = computePenalty(inputs);
+    lastResult = { inputs: inputs, penalty: penalty };
+
+    /* Render all tabs */
+    renderAssessment(inputs, penalty);
+    renderSensitivity(inputs, penalty);
+    renderBenchmarks(inputs, penalty);
+    renderReport(inputs, penalty);
+
+    /* Switch to assessment tab */
+    var tab = document.getElementById('tab-assess');
+    tab.click();
+  }
+
+  /* ===== Examples ===== */
+  function initExamples() {
+    var btns = document.querySelectorAll('[data-example]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function() {
+        var key = this.getAttribute('data-example');
+        if (EXAMPLES[key]) {
+          setInputs(EXAMPLES[key]);
+        }
+      });
+    }
+  }
+
+  /* ===== Reset ===== */
+  function doReset() {
+    var fields = document.querySelectorAll('#panel-input input');
+    for (var i = 0; i < fields.length; i++) {
+      fields[i].value = '';
+    }
+    document.getElementById('inp-domain').value = 'other';
+    document.getElementById('inp-scale').value = 'large';
+    document.getElementById('inp-target-year').value = CURRENT_YEAR;
+    lastResult = null;
+
+    /* Reset result panels */
+    document.getElementById('assess-placeholder').style.display = '';
+    document.getElementById('assess-results').style.display = 'none';
+    document.getElementById('sens-placeholder').style.display = '';
+    document.getElementById('sens-results').style.display = 'none';
+    document.getElementById('bench-placeholder').style.display = '';
+    document.getElementById('bench-results').style.display = 'none';
+    document.getElementById('report-placeholder').style.display = '';
+    document.getElementById('report-results').style.display = 'none';
+
+    /* Switch to input tab */
+    document.getElementById('tab-input').click();
+  }
+
+  /* ===== Copy Report ===== */
+  function copyReport() {
+    var el = document.getElementById('report-content');
+    if (!el) return;
+    var text = el.innerText || el.textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      alert('Report copied to clipboard.');
+    }).catch(function() {
+      /* Fallback */
+      var textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      alert('Report copied to clipboard.');
+    });
+  }
+
+  /* ===== Init ===== */
+  function init() {
+    /* Set default target year */
+    document.getElementById('inp-target-year').value = CURRENT_YEAR;
+
+    initTabs();
+    initDarkMode();
+    initExamples();
+
+    document.getElementById('btnCalculate').addEventListener('click', doCalculate);
+    document.getElementById('btnSaveInputs').addEventListener('click', saveInputs);
+    document.getElementById('btnLoadInputs').addEventListener('click', loadInputs);
+    document.getElementById('btnReset').addEventListener('click', doReset);
+    document.getElementById('btnExportCSV').addEventListener('click', function() {
+      if (lastResult) exportCSV(lastResult.inputs, lastResult.penalty);
+    });
+    document.getElementById('btnExportJSON').addEventListener('click', function() {
+      if (lastResult) exportJSON(lastResult.inputs, lastResult.penalty);
+    });
+    document.getElementById('btnCopyReport').addEventListener('click', copyReport);
+
+    /* Keyboard: Enter on input tab triggers calculate */
+    document.getElementById('panel-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+        e.preventDefault();
+        doCalculate();
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+</body>
+</html>

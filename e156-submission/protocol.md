@@ -4,14 +4,14 @@ author@example.com
 
 Protocol: Clinical Transportability Engine: A Composite Penalty Index for Meta-Analysis Generalizability
 
-This protocol describes the evidence synthesis for Clinical Transportability Engine: A Composite Penalty Index for, targeting reproducible estimation of Median CTE penalty index in a versioned workflow. Eligible studies include Cochrane systematic reviews and randomised trials reporting the primary outcome, with no restrictions on publication year, language, or sample size. Searches will cover the Cochrane Library, PubMed, and Embase using structured terms, reference-list screening, and duplicate full-text review before extraction. The primary analysis will estimate Median CTE penalty index using restricted maximum likelihood random-effects meta-analysis, reporting 95 percent confidence intervals, prediction intervals, and prespecified model checks. Heterogeneity will be summarised using I-squared and tau-squared, with sensitivity analyses across variance estimators, exclusion scenarios, and leave-one-out patterns. Analysis code will be versioned and archived at C:\Models\TransportabilityCalc, and reporting will follow PRISMA 2020 guidance to support independent verification and reuse. Anticipated limitations include publication bias, clinical heterogeneity, sparse data in some settings, and the constraints of aggregate-level evidence synthesis.
+This protocol describes the evidence synthesis for Clinical Transportability Engine: A Composite Penalty Index for, targeting reproducible estimation of Median CTE penalty index in a versioned workflow. Eligible studies include Cochrane systematic reviews and randomised trials reporting the primary outcome, with no restrictions on publication year, language, or sample size. Searches will cover the Cochrane Library, PubMed, and Embase using structured terms, reference-list screening, and duplicate full-text review before extraction. The primary analysis will estimate Median CTE penalty index using restricted maximum likelihood random-effects meta-analysis, reporting 95 percent confidence intervals, prediction intervals, and prespecified model checks. Heterogeneity will be summarised using I-squared and tau-squared, with sensitivity analyses across variance estimators, exclusion scenarios, and leave-one-out patterns. Analysis code will be versioned and archived at https://github.com/mahmood726-cyber/transportabilitycalc, and reporting will follow PRISMA 2020 guidance to support independent verification and reuse. Anticipated limitations include publication bias, clinical heterogeneity, sparse data in some settings, and the constraints of aggregate-level evidence synthesis.
 
 Outside Notes
 
 Type: protocol
 Primary estimand: Median CTE penalty index
 App: Clinical Transportability Calculator v1.0
-Code: C:\Models\TransportabilityCalc
+Code: https://github.com/mahmood726-cyber/transportabilitycalc
 Date: 2026-03-28
 Validation: DRAFT
 

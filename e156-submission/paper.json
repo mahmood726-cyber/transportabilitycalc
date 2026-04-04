@@ -39,7 +39,7 @@
   "notes": {
     "app": "Clinical Transportability Calculator v1.0",
     "data": "445 Cochrane reviews, 11,974 pairwise comparisons linked to ClinicalTrials.gov",
-    "code": "C:\\Models\\TransportabilityCalc",
+    "code": "https://github.com/mahmood726-cyber/transportabilitycalc",
     "doi": "",
     "version": "1.0",
     "date": "2026-03-28",
@@ -78,7 +78,7 @@
       {
         "name": "result sentence has interval",
         "ok": true,
-        "detail": "Sentence 4 should include a confidence interval."
+        "detail": "Sentence 4 should include a quantitative result such as a percentage, count, or interval."
       },
       {
         "name": "result sentence has estimand",
